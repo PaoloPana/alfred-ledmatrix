@@ -32,6 +32,7 @@
 -W clippy::expect_fun_call
 -A clippy::module_name_repetitions
 -A clippy::must_use_candidate # not accurate
+-A unreachable_pub
 
 -A clippy::missing_errors_doc
 

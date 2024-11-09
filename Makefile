@@ -1,5 +1,5 @@
 BIN_FILE := alfred-ledmatrix
-LINT_PARAMS := $(shell cat .lints | cut -f1 -d"#" | tr '\n' ' ')
+LINT_PARAMS := $(shell cat .lints | cut -f1 -d"\#" | tr '\n' ' ')
 
 build:
 	cargo build
