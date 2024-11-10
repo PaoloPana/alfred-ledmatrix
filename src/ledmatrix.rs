@@ -1,6 +1,7 @@
 use gpio_cdev::{Chip, LineHandle, LineRequestFlags};
 use std::thread::sleep;
 use std::time::Duration;
+use alfred_rs::log::debug;
 
 struct Frame {
     frames: u32,
@@ -98,6 +99,8 @@ pub fn show(sda_handle: &LineHandle, scl_handle: &LineHandle, args: Vec<[u32; 17
 
     let empty_frame = [0u32; 16];
     if let Some(delay) = frames_data.last().map(|frame| frame.frames) {
+        if delay == 0 { return }
+        debug!("showing empty frame");
         show_frame(sda_handle, scl_handle, &empty_frame);
         sleep(Duration::from_millis(u64::from(delay)));
     }

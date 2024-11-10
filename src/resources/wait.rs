@@ -3,7 +3,10 @@ use crate::resources::Resource;
 pub struct Wait { }
 
 impl Resource for Wait {
-    fn get_resource() -> Vec<[u32; 17]> {
+    fn new() -> Self {
+        Self { }
+    }
+    fn get_resource(&mut self) -> Vec<[u32; 17]> {
         vec![
             [15, 0, 0, 0, 32, 0, 0, 0, 32, 0, 0, 0, 32, 0, 0, 0, 0],
             [15, 0, 0, 0, 16, 0, 0, 0, 32, 0, 0, 0, 32, 0, 0, 0, 0],
