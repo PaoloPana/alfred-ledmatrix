@@ -2,13 +2,11 @@ mod ledmatrix;
 mod resources;
 mod alarm;
 
-use std::ops::Add;
-use std::time::Duration;
 use alfred_rs::{tokio, AlfredModule};
-use alfred_rs::connection::{Receiver, Sender};
+use alfred_rs::connection::Connection;
 use alfred_rs::error::Error;
 use alfred_rs::message::{Message, MessageType};
-use alfred_rs::tokio::time::{sleep_until, Instant};
+use alfred_rs::tokio::sync::mpsc::Receiver;
 use gpio_cdev::LineHandle;
 use crate::resources::Resources;
 
@@ -18,22 +16,42 @@ const INPUT_TOPIC: &str = "ledmatrix";
 const PLAY_START_EVENT: &str = "play_start";
 const PLAY_END_EVENT: &str = "play_end";
 
-async fn execute_resource(resources: &mut Resources, resource_name: &str, sda_handle: &LineHandle, scl_handle: &LineHandle, module: &mut AlfredModule) {
-    let frames = resources.get(resource_name)
-        .expect("An error occurred while fetching resource");
-    let message = Message {
-        text: resource_name.to_string(),
-        message_type: MessageType::Text,
-            ..Message::default()
-    };
-    module.send_event(MODULE_NAME, PLAY_START_EVENT, &message).await.expect("An error occurred while sending start event");
-    ledmatrix::show(sda_handle, scl_handle, frames);
-    module.send_event(MODULE_NAME, PLAY_END_EVENT, &message).await.expect("An error occurred while sending end event");
+struct LedMatrix {
+    sda_handle: LineHandle,
+    scl_handle: LineHandle,
+    resources: Resources
+}
+impl LedMatrix {
+    pub fn new(sda_pin: u32, scl_pin: u32) -> Self {
+        let (sda_handle, scl_handle) = ledmatrix::init(sda_pin, scl_pin).expect("An error occurred while initializing GPIO");
+        Self {
+            sda_handle, scl_handle, resources: Resources::new()
+        }
+    }
+
+    async fn execute_resource(&self, resource_name: &str) {
+        let frames = self.resources.get(resource_name)
+            .expect("An error occurred while fetching resource");
+        ledmatrix::show(&self.sda_handle, &self.scl_handle, frames);
+    }
+
+    pub async fn handle_alfred_incoming(&self, mut receiver: Receiver<Message>, connection: &Connection) {
+        loop {
+            let resource_name = receiver.recv().await.expect("An error occurred while receiving a message").text;
+            let message = Message {
+                text: resource_name.to_string(),
+                message_type: MessageType::Text,
+                ..Message::default()
+            };
+            connection.send_event(MODULE_NAME, PLAY_START_EVENT, &message).await.expect("An error occurred while sending start event");
+            self.execute_resource(&resource_name).await;
+            connection.send_event(MODULE_NAME, PLAY_END_EVENT, &message).await.expect("An error occurred while sending end event");
+        }
+    }
 }
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 16)]
 async fn main() -> Result<(), Error> {
-    let mut resources = Resources::new();
     env_logger::init();
     let mut module = AlfredModule::new(MODULE_NAME).await.expect("Failed to create module");
     module.listen(INPUT_TOPIC).await.expect("An error occurred while listening");
@@ -41,15 +59,20 @@ async fn main() -> Result<(), Error> {
         .map_or(17u32, |s| s.parse().expect("Failed to parse sda property"));
     let scl_pin = module.config.get_module_value("scl")
         .map_or(27u32, |s| s.parse().expect("Failed to parse sda property"));
-    let (sda_handle, scl_handle) = ledmatrix::init(sda_pin, scl_pin).expect("An error occurred while initializing GPIO");
+
+    let led_matrix = LedMatrix::new(sda_pin, scl_pin);
+
+    let (sender, receiver) = tokio::sync::mpsc::channel(1);
+
+    let connection = module.connection.clone();
+
+    tokio::spawn(async move {
+        led_matrix.handle_alfred_incoming(receiver, &connection).await;
+    });
+
     loop {
-        let start_time = Instant::now();
-        execute_resource(&mut resources, "clock", &sda_handle, &scl_handle, &mut module).await;
-        sleep_until(start_time.add(Duration::from_millis(1000/60))).await;
-        resources.update_tick();
+        let (_, message) = module.receive().await.expect("An error occurred while receiving a message");
+        sender.send(message).await.expect("An error occurred while sending a message");
     }
-    //ledmatrix::test().unwrap();
-    //ledmatrix::show(&sda_handle, &scl_handle, vec![frame]);
-    //Ok(())
 }
 

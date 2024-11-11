@@ -8,7 +8,7 @@ use crate::resources::wait::Wait;
 
 trait Resource {
     fn new() -> Self;
-    fn get_resource(&mut self) -> Vec<[u32; 17]>;
+    fn get_resource(&self) -> Vec<[u32; 17]>;
 }
 
 pub struct Resources {
@@ -32,7 +32,7 @@ impl Resources {
         }
     }
 
-    pub fn get(&mut self, resource_name: &str) -> Result<Vec<[u32; 17]>, Box<dyn Error>> {
+    pub fn get(&self, resource_name: &str) -> Result<Vec<[u32; 17]>, Box<dyn Error>> {
         match resource_name {
             "heart" => Ok(self.heart.get_resource()),
             "pacman" => Ok(self.pacman.get_resource()),
@@ -42,10 +42,6 @@ impl Resources {
             "clock" => Ok(self.clock.get_resource()),
             _ => Err("Unknown resource name".into())
         }
-    }
-
-    pub fn update_tick(&mut self) {
-        self.clock.update_tick();
     }
 }
 
