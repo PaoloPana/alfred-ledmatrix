@@ -7,7 +7,7 @@ pub struct Clock { }
 impl Clock {
     fn get_formatted_time(&self) -> String {
         let date_time = chrono::offset::Local::now();
-        let format = if date_time.nanosecond() < 500_000_000 / 2 { "%-I:%M" } else { "%-I %M" };
+        let format = if date_time.second() % 2 == 0 / 2 { "%-I:%M" } else { "%-I %M" };
         date_time.time().format(format).to_string()
     }
 }
