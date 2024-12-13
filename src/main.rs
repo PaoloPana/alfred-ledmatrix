@@ -29,7 +29,7 @@ impl LedMatrix {
         }
     }
 
-    async fn execute_resource(&self, resource_name: &str) {
+    fn execute_resource(&self, resource_name: &str) {
         let frames = self.resources.get(resource_name)
             .expect("An error occurred while fetching resource");
         ledmatrix::show(&self.sda_handle, &self.scl_handle, frames);
@@ -44,7 +44,7 @@ impl LedMatrix {
                 ..Message::default()
             };
             connection.send_event(MODULE_NAME, PLAY_START_EVENT, &message).await.expect("An error occurred while sending start event");
-            self.execute_resource(&resource_name).await;
+            self.execute_resource(&resource_name);
             connection.send_event(MODULE_NAME, PLAY_END_EVENT, &message).await.expect("An error occurred while sending end event");
         }
     }
