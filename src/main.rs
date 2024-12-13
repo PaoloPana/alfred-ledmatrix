@@ -53,7 +53,7 @@ impl LedMatrix {
 #[tokio::main(flavor = "multi_thread", worker_threads = 16)]
 async fn main() -> Result<(), Error> {
     env_logger::init();
-    let mut module = AlfredModule::new(MODULE_NAME).await.expect("Failed to create module");
+    let mut module = AlfredModule::new(MODULE_NAME, env!("CARGO_PKG_VERSION")).await.expect("Failed to create module");
     module.listen(INPUT_TOPIC).await.expect("An error occurred while listening");
     let sda_pin = module.config.get_module_value("sda")
         .map_or(17u32, |s| s.parse().expect("Failed to parse sda property"));
