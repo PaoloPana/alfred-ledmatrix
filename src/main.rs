@@ -2,11 +2,11 @@ mod ledmatrix;
 mod resources;
 mod alarm;
 
-use alfred_rs::{tokio, AlfredModule};
-use alfred_rs::connection::Connection;
-use alfred_rs::error::Error;
-use alfred_rs::message::{Message, MessageType};
-use alfred_rs::tokio::sync::mpsc::Receiver;
+use alfred_core::{tokio, AlfredModule};
+use alfred_core::connection::Connection;
+use alfred_core::error::Error;
+use alfred_core::message::{Message, MessageType};
+use alfred_core::tokio::sync::mpsc::Receiver;
 use gpio_cdev::LineHandle;
 use crate::resources::Resources;
 
