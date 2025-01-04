@@ -1,7 +1,7 @@
 use gpio_cdev::{Chip, LineHandle, LineRequestFlags};
 use std::thread::sleep;
 use std::time::Duration;
-use alfred_rs::log::debug;
+use alfred_core::log::debug;
 
 struct Frame {
     frames: u32,
